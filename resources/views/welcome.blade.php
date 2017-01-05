@@ -94,18 +94,7 @@
             <!--First row-->
             <div class="row">
                 <div class="col-md-12">
-                    <div class="jumbotron">
-                        <h2 class="h2-responsive">Material Design for Bootstrap</h2>
-                        <br>
-                        <!--Right-->
-                        <div class="md-form input-group">
-                            <input type="search" class="form-control" placeholder="Search for...">
-                            <span class="input-group-btn">
-                                <button class="btn btn-primary btn-lg" type="button">Go!</button>
-                            </span>
-                        </div>
-                        <hr>
-                        <div id="map-container" class="z-depth-1" style="height: 300px"></div>
+                    <div class="jumbotron" id="searchApp">
                     </div>
                 </div>
             </div>
@@ -153,6 +142,7 @@
 
         google.maps.event.addDomListener(window, 'load', init_map);
     </script>
+    <script src="/js/app.js"></script>
 </body>
 
 </html>
