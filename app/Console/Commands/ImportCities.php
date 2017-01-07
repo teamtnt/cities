@@ -4,7 +4,6 @@ namespace App\Console\Commands;
 
 use App\City;
 use Illuminate\Console\Command;
-use Illuminate\Support\Facades\DB;
 use TeamTNT\TNTSearch\Indexer\TNTIndexer;
 
 class ImportCities extends Command
@@ -61,7 +60,7 @@ class ImportCities extends Command
         $cities = fopen(storage_path().'/worldcitiespop.txt', "r");
 
         $lineNumber = 0;
-        $bar = $this->output->createProgressBar(3173959);
+        $bar        = $this->output->createProgressBar(3173959);
 
         if ($cities) {
             while (!feof($cities)) {
@@ -84,17 +83,19 @@ class ImportCities extends Command
 
     public function insertCity($cityArray)
     {
+        //we enter only cities wich have a population set
+        if ($cityArray[4] < 1) {
+            return;
+        }
+
         $city             = new City;
         $city->country    = $cityArray[0];
         $city->city       = utf8_encode($cityArray[2]);
         $city->region     = $cityArray[3];
-        $city->population = 0;
-        if ($cityArray[4] != "") {
-            $city->population = $cityArray[4];
-        }
-        $city->latitude  = trim($cityArray[5]);
-        $city->longitude = trim($cityArray[6]);
-        $city->n_grams   = $this->createNGrams($city->city);
+        $city->population = $cityArray[4];
+        $city->latitude   = trim($cityArray[5]);
+        $city->longitude  = trim($cityArray[6]);
+        $city->n_grams    = $this->createNGrams($city->city);
         $city->save();
 
     }
@@ -122,7 +123,7 @@ class ImportCities extends Command
         gzclose($file);
     }
 
-    public function createNGrams($word) 
+    public function createNGrams($word)
     {
         return utf8_encode($this->tnt->buildTrigrams($word));
     }
