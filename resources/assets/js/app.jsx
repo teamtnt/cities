@@ -11,7 +11,7 @@ class DidYouMeanList extends React.Component {
                 <h5>Did you mean: </h5>
                 <ul className="list-group">
                 {suggestions.map( (suggestion, key) =>  {
-                    return <li key={key} className="list-group-item"><a href="#">{suggestion.city} ({suggestion.country}) {suggestion.latitude} {suggestion.longitude} Population: {suggestion.population}</a></li>;
+                    return <li key={key} className="list-group-item"><a href="#" onClick={this.props.setCity.bind(this, suggestion)}>{suggestion.city} ({suggestion.country}) {suggestion.latitude} {suggestion.longitude} Population: {suggestion.population}</a></li>;
                 })}
                 </ul>
                 <br/>
@@ -36,6 +36,7 @@ class App extends React.Component {
         };
         this.handleChange = this.handleChange.bind(this);
         this.handleSubmit = this.handleSubmit.bind(this);
+        this.setCity      = this.setCity.bind(this);
     }
     componentDidMount() {
         var location = new google.maps.LatLng(this.state.city.latitude, this.state.city.longitude);
@@ -71,16 +72,19 @@ class App extends React.Component {
         })
         .then(function (response) {
             if(response.data.didyoumean) {
-                console.log(response.data.data)
                 context.setState({suggestions: response.data.data});
             } else {
-                context.setState({city: response.data.data, suggestions: []});
-                context.setMap(context.state.city.longitude, context.state.city.latitude)
+                context.setCity(response.data.data);
             }
         })
         .catch(function (error) {
             console.log(error);
         });
+    }
+
+    setCity(city) {
+        this.setState({city: city, suggestions: [], searchValue: city.city});
+        this.setMap(city.longitude, city.latitude);
     }
 
     render () {
@@ -99,7 +103,7 @@ class App extends React.Component {
                 </div>
             </form>
             <hr />
-            <DidYouMeanList suggestions={this.state.suggestions} />
+            <DidYouMeanList setCity={this.setCity} suggestions={this.state.suggestions} />
             <h3>{this.state.city.city} ({this.state.city.country}) {this.state.city.latitude} {this.state.city.longitude} Population: {this.state.city.population}</h3>
             <div id="map-container" className="z-depth-1" style={mapStyle}></div>
         </div>;
