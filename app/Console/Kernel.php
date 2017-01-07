@@ -13,7 +13,8 @@ class Kernel extends ConsoleKernel
      * @var array
      */
     protected $commands = [
-        \App\Console\Commands\ImportCities::class
+        \App\Console\Commands\ImportCities::class,
+        \App\Console\Commands\CreateCityTrigrams::class,
     ];
 
     /**

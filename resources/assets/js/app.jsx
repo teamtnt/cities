@@ -2,6 +2,24 @@ import React from 'react';
 import {render} from 'react-dom';
 import axios from 'axios';
 
+class DidYouMeanList extends React.Component {
+    render() {
+        var suggestions = this.props.suggestions;
+        if(suggestions.length == 0) return null; 
+        return (
+            <div>
+                <h5>Did you mean: </h5>
+                <ul className="list-group">
+                {suggestions.map( (suggestion, key) =>  {
+                    return <li key={key} className="list-group-item"><a href="#">{suggestion.city} ({suggestion.country}) {suggestion.latitude} {suggestion.longitude} Population: {suggestion.population}</a></li>;
+                })}
+                </ul>
+                <br/>
+            </div>
+        )
+    }
+}
+
 class App extends React.Component {
     constructor(props) {
         super(props);
@@ -10,15 +28,16 @@ class App extends React.Component {
                 latitude: 40.7141667,
                 longitude: -74.0063889,
                 city: 'New York',
+                population: 8107916,
                 country: 'us'
             },
-            searchValue: ""
+            searchValue: "",
+            suggestions: []
         };
         this.handleChange = this.handleChange.bind(this);
         this.handleSubmit = this.handleSubmit.bind(this);
     }
     componentDidMount() {
-        console.log(this.state.city.latitude)
         var location = new google.maps.LatLng(this.state.city.latitude, this.state.city.longitude);
 
         this.map_marker = new google.maps.Marker({
@@ -51,8 +70,13 @@ class App extends React.Component {
             }
         })
         .then(function (response) {
-            context.setState({city: response.data});
-            context.setMap(response.data.longitude, response.data.latitude)
+            if(response.data.didyoumean) {
+                console.log(response.data.data)
+                context.setState({suggestions: response.data.data});
+            } else {
+                context.setState({city: response.data.data, suggestions: []});
+                context.setMap(context.state.city.longitude, context.state.city.latitude)
+            }
         })
         .catch(function (error) {
             console.log(error);
@@ -75,7 +99,8 @@ class App extends React.Component {
                 </div>
             </form>
             <hr />
-            <h2>{this.state.city.city} ({this.state.city.country}) {this.state.city.latitude} {this.state.city.longitude}</h2>
+            <DidYouMeanList suggestions={this.state.suggestions} />
+            <h3>{this.state.city.city} ({this.state.city.country}) {this.state.city.latitude} {this.state.city.longitude} Population: {this.state.city.population}</h3>
             <div id="map-container" className="z-depth-1" style={mapStyle}></div>
         </div>;
     }
