@@ -16,13 +16,13 @@ class CityController extends Controller
         if (isset($res[0])) {
             return [
                 'didyoumean' => false,
-                'data' => $res[0]
+                'data'       => $res[0]
             ];
         }
 
         //if we don't find anything we'll try to guess
         $TNTIndexer = new TNTIndexer;
-        $trigrams = $TNTIndexer->buildTrigrams($request->get('city'));
+        $trigrams   = $TNTIndexer->buildTrigrams($request->get('city'));
 
         $tnt = new TNTSearch;
 
@@ -33,28 +33,28 @@ class CityController extends Controller
         $tnt->setDatabaseHandle(app('db')->connection()->getPdo());
 
         $tnt->selectIndex("cityngrams.index");
-        $res = $tnt->search($trigrams, 10);
-        $keys  = collect($res['ids'])->values()->all();
+        $res  = $tnt->search($trigrams, 10);
+        $keys = collect($res['ids'])->values()->all();
 
         $suggestions = City::whereIn('id', $keys)->get();
 
-        $suggestions->map(function($city) use ($request) {
+        $suggestions->map(function ($city) use ($request) {
             $city->distance = levenshtein($request->get('city'), $city->city);
         });
 
-        $sorted = $suggestions->sort(function($a, $b) {
-           if($a->distance === $b->distance) {
-             if($a->population === $b->population) {
-               return 0;
-             }
-             return $a->population > $b->population ? -1 : 1;
-           } 
-           return $a->distance < $b->distance ? -1 : 1;
+        $sorted = $suggestions->sort(function ($a, $b) {
+            if ($a->distance === $b->distance) {
+                if ($a->population === $b->population) {
+                    return 0;
+                }
+                return $a->population > $b->population ? -1 : 1;
+            }
+            return $a->distance < $b->distance ? -1 : 1;
         });
 
         return [
             'didyoumean' => true,
-            'data' => $sorted->values()->all()
+            'data'       => $sorted->values()->all()
         ];
     }
 }
