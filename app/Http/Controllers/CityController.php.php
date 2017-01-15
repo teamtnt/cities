@@ -13,7 +13,7 @@ class CityController extends Controller
     public function search(Request $request)
     {
         $res = City::search($request->get('city'))->get();
-        if (isset($res[0])) {
+        if (isset($res[0]) && $this->isExactMatch($request, $res[0])) {
             return [
                 'didyoumean' => false,
                 'data'       => $res[0]
@@ -56,5 +56,10 @@ class CityController extends Controller
             'didyoumean' => true,
             'data'       => $sorted->values()->all()
         ];
+    }
+
+    public function isExactMatch($request, $result)
+    {
+        return strtolower($request->get('city')) == strtolower($result->city);
     }
 }
