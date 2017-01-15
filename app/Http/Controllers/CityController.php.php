@@ -21,6 +21,20 @@ class CityController extends Controller
         }
 
         //if we don't find anything we'll try to guess
+        return [
+            'didyoumean' => true,
+            'data'       => $this->getSuggestions($request)
+        ];
+
+    }
+
+    public function isExactMatch($request, $result)
+    {
+        return strtolower($request->get('city')) == strtolower($result->city);
+    }
+
+    public function getSuggestions(Request $request)
+    {
         $TNTIndexer = new TNTIndexer;
         $trigrams   = $TNTIndexer->buildTrigrams($request->get('city'));
 
@@ -52,14 +66,6 @@ class CityController extends Controller
             return $a->distance < $b->distance ? -1 : 1;
         });
 
-        return [
-            'didyoumean' => true,
-            'data'       => $sorted->values()->all()
-        ];
-    }
-
-    public function isExactMatch($request, $result)
-    {
-        return strtolower($request->get('city')) == strtolower($result->city);
+        return $sorted->values()->all();
     }
 }
