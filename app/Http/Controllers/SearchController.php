@@ -42,6 +42,11 @@ class SearchController extends Controller
 
         $suggestions = City::search($trigrams)->take(500)->get();
 
+        return $this->sortByLevenshteinDistance($suggestions, $query);
+    }
+
+    public function sortByLevenshteinDistance($suggestions, $query)
+    {
         $suggestions = $suggestions->filter(function ($city) use ($query) {
             $city->distance = levenshtein($query, $city->city);
             if ($city->distance < 3) {
