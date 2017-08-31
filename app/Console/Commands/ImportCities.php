@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\City;
+use DB;
 use Illuminate\Console\Command;
 use TeamTNT\TNTSearch\Indexer\TNTIndexer;
 
@@ -57,28 +58,23 @@ class ImportCities extends Command
             $this->unzipFile($gzipedFile);
         }
 
-        $cities = fopen(storage_path().'/worldcitiespop.txt', "r");
+        $pdo = app('db')->connection()->getPdo();
 
-        $lineNumber = 0;
-        $bar        = $this->output->createProgressBar(3173959);
+        $this->stmt = $pdo->prepare("INSERT INTO cities (country, city, region, population, latitude, longitude, n_grams) VALUES (:country, :city, :region, :population, :latitude, :longitude, :n_grams)");
 
-        if ($cities) {
-            while (!feof($cities)) {
-                $line = fgets($cities, 4096);
-
-                if ($lineNumber == 0) {
-                    $lineNumber++;
-                    continue;
-                }
-                //we skip the first line since it's the header
-                $line = explode(',', $line);
-                $this->insertCity($line);
-                $lineNumber++;
-                $bar->advance();
+        DB::beginTransaction();
+        foreach (new \SplFileObject(storage_path().'/worldcitiespop.txt') as $lineNumber => $lineContent) {
+            if ($lineNumber == 0) {
+                continue;
             }
-            fclose($cities);
+            $line = explode(',', $lineContent);
+            if (count($line) < 7) {
+                continue;
+            }
+
+            $this->insertCity($line);
         }
-        $bar->finish();
+        DB::commit();
     }
 
     public function insertCity($cityArray)
@@ -88,16 +84,19 @@ class ImportCities extends Command
             return;
         }
 
-        $city             = new City;
-        $city->country    = $cityArray[0];
-        $city->city       = utf8_encode($cityArray[2]);
-        $city->region     = $cityArray[3];
-        $city->population = $cityArray[4];
-        $city->latitude   = trim($cityArray[5]);
-        $city->longitude  = trim($cityArray[6]);
-        $city->n_grams    = $this->createNGrams($city->city);
-        $city->save();
+        $city      = utf8_encode($cityArray[2]);
+        $ngrams    = $this->createNGrams($city);
+        $latitude  = trim($cityArray[5]);
+        $longitude = trim($cityArray[6]);
 
+        $this->stmt->bindParam(':country', $cityArray[0]);
+        $this->stmt->bindParam(':city', $city);
+        $this->stmt->bindParam(':region', $cityArray[3]);
+        $this->stmt->bindParam(':population', $cityArray[4]);
+        $this->stmt->bindParam(':latitude', $latitude);
+        $this->stmt->bindParam(':longitude', $longitude);
+        $this->stmt->bindParam(':n_grams', $ngrams);
+        $this->stmt->execute();
     }
 
     public function unzipFile($from)

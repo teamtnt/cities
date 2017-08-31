@@ -6,24 +6,26 @@ use App\City;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use TeamTNT\TNTSearch\Indexer\TNTIndexer;
-use TeamTNT\TNTSearch\TNTSearch;
 
-class CityController extends Controller
+class SearchController extends Controller
 {
+
     public function search(Request $request)
     {
-        $res = City::search($request->get('city'))->get();
-        if (isset($res[0]) && $this->isExactMatch($request, $res[0])) {
+        $query   = $request->get('city');
+        $results = $this->orderByPopulation(City::search($query)->get());
+
+        if ($results->count() && $this->isExactMatch($request, $results[0])) {
             return [
                 'didyoumean' => false,
-                'data'       => $res[0]
+                'data'       => $results[0]
             ];
         }
 
         //if we don't find anything we'll try to guess
         return [
             'didyoumean' => true,
-            'data'       => $this->getSuggestions($request)
+            'data'       => $this->getSuggestions($query)
         ];
 
     }
@@ -33,27 +35,19 @@ class CityController extends Controller
         return strtolower($request->get('city')) == strtolower($result->city);
     }
 
-    public function getSuggestions(Request $request)
+    public function getSuggestions($query)
     {
-        $TNTIndexer = new TNTIndexer;
-        $trigrams   = $TNTIndexer->buildTrigrams($request->get('city'));
+        $indexer  = new TNTIndexer;
+        $trigrams = $indexer->buildTrigrams($query);
 
-        $tnt = new TNTSearch;
+        $suggestions = City::search($trigrams)->take(500)->get();
 
-        $driver = config('database.default');
-        $config = config('scout.tntsearch') + config("database.connections.$driver");
-
-        $tnt->loadConfig($config);
-        $tnt->setDatabaseHandle(app('db')->connection()->getPdo());
-
-        $tnt->selectIndex("cityngrams.index");
-        $res  = $tnt->search($trigrams, 10);
-        $keys = collect($res['ids'])->values()->all();
-
-        $suggestions = City::whereIn('id', $keys)->get();
-
-        $suggestions->map(function ($city) use ($request) {
-            $city->distance = levenshtein($request->get('city'), $city->city);
+        $suggestions = $suggestions->filter(function ($city) use ($query) {
+            $city->distance = levenshtein($query, $city->city);
+            if ($city->distance < 3) {
+                return true;
+            }
+            return false;
         });
 
         $sorted = $suggestions->sort(function ($a, $b) {
@@ -66,6 +60,17 @@ class CityController extends Controller
             return $a->distance < $b->distance ? -1 : 1;
         });
 
-        return $sorted->values()->all();
+        return $sorted->values()->take(5);
+    }
+
+    public function orderByPopulation($results)
+    {
+        $sorted = $results->sort(function ($a, $b) {
+            if ($a->population === $b->population) {
+                return 0;
+            }
+            return $a->population > $b->population ? -1 : 1;
+        });
+        return $sorted->values();
     }
 }
