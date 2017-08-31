@@ -27,7 +27,6 @@ class SearchController extends Controller
             'didyoumean' => true,
             'data'       => $this->getSuggestions($query)
         ];
-
     }
 
     public function isExactMatch($request, $result)
