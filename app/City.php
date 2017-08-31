@@ -19,8 +19,9 @@ class City extends Model
     public function toSearchableArray()
     {
         return [
-            'id'   => $this->id,
-            'city' => $this->city
+            'id'      => $this->id,
+            'city'    => $this->name,
+            'n_grams' => $this->n_grams
         ];
     }
 }

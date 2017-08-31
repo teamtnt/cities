@@ -14,7 +14,7 @@ class Kernel extends ConsoleKernel
      */
     protected $commands = [
         \App\Console\Commands\ImportCities::class,
-        \App\Console\Commands\CreateCityTrigrams::class,
+        \App\Console\Commands\IndexCities::class,
     ];
 
     /**

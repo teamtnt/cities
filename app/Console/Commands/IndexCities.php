@@ -5,21 +5,21 @@ namespace App\Console\Commands;
 use Illuminate\Console\Command;
 use TeamTNT\TNTSearch\TNTSearch;
 
-class CreateCityTrigrams extends Command
+class IndexCities extends Command
 {
     /**
      * The name and signature of the console command.
      *
      * @var string
      */
-    protected $signature = 'city:trigrams';
+    protected $signature = 'index:cities';
 
     /**
      * The console command description.
      *
      * @var string
      */
-    protected $description = 'Creates an index of city trigrams';
+    protected $description = 'Creates an index with trigrams';
 
     /**
      * Create a new command instance.
@@ -47,8 +47,8 @@ class CreateCityTrigrams extends Command
         $tnt->loadConfig($config);
         $tnt->setDatabaseHandle(app('db')->connection()->getPdo());
 
-        $indexer = $tnt->createIndex('cityngrams.index');
-        $indexer->query('SELECT id, n_grams FROM cities;');
+        $indexer = $tnt->createIndex('cities.index');
+        $indexer->query('SELECT id, city, n_grams FROM cities;');
         $indexer->setLanguage('no');
         $indexer->run();
     }
